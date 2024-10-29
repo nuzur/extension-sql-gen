@@ -3,11 +3,13 @@ package config
 type Action string
 
 const (
-	SelectAllAction Action = "select-all"
-	InsertAction    Action = "insert"
-	updateAction    Action = "update"
-	DeleteAction    Action = "delete"
-	CreateAction    Action = "create"
+	SelectSimpleAction             Action = "select-simple"
+	SelectForIndexedSimpleAction   Action = "select-indexed-simple"
+	SelectForIndexedCombinedAction Action = "select-indexed-combined"
+	InsertAction                   Action = "insert"
+	updateAction                   Action = "update"
+	DeleteAction                   Action = "delete"
+	CreateAction                   Action = "create"
 )
 
 type DBType string

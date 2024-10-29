@@ -7,5 +7,5 @@ import (
 )
 
 func (s *server) GetMetadata(ctx context.Context, req *pb.GetMetadataRequest) (*pb.GetMetadataResponse, error) {
-	return s.client.GetMetadata(ctx, req)
+	return s.metadata, nil
 }

@@ -2,6 +2,7 @@ package gen
 
 import (
 	"context"
+	"errors"
 
 	"github.com/nuzur/extension-sdk/client"
 	pb "github.com/nuzur/extension-sdk/idl/gen"
@@ -20,7 +21,10 @@ type GenerateResponse struct {
 
 func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, error) {
 	if len(req.Configvalues.Entities) == 0 || len(req.Configvalues.Actions) == 0 {
-		return nil, nil
+		return nil, errors.New("invalid request")
 	}
-	return &GenerateResponse{}, nil
+	return &GenerateResponse{
+		DisplayBlocks:   []*pb.ExecutionResponseDisplayBlock{},
+		FileDownloadUrl: "",
+	}, nil
 }

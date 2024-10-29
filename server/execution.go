@@ -39,6 +39,7 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 		ProjectUUID:          projectUUID,
 		ProjectVersionUUID:   projectVersionUUID,
 		ProjectExtensionUUID: projectExtensionUUID,
+		Metadata:             "{}",
 	})
 	if err != nil {
 		return nil, err

@@ -1,5 +1,9 @@
 package gen
 
+import (
+	nemgen "github.com/nuzur/extension-sdk/proto_deps/nem/idl/gen"
+)
+
 type SchemaTemplate struct {
 	Entities []SchemaEntity
 }
@@ -16,6 +20,7 @@ type SchemaEntity struct {
 type SchemaField struct {
 	Name     string
 	Type     string
+	Field    *nemgen.Field
 	Null     string
 	HasComma bool
 	Default  string
@@ -23,9 +28,10 @@ type SchemaField struct {
 }
 
 type SchemaIndex struct {
-	Name      string
-	FieldName string
-	HasComma  bool
+	Name       string
+	FieldNames map[string]string
+	Index      *nemgen.Index
+	HasComma   bool
 }
 
 type SchemaSelectStatement struct {

@@ -1,0 +1,150 @@
+package gen
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/iancoleman/strcase"
+	"github.com/nuzur/extension-sdk/domainhelpers"
+	nemgen "github.com/nuzur/extension-sdk/proto_deps/nem/idl/gen"
+	"github.com/nuzur/extension-sql-gen/config"
+)
+
+func ResolveSelectStatements(project *nemgen.Project, e *nemgen.Entity, dbType config.DBType) []SchemaSelectStatement {
+	selects := []SchemaSelectStatement{}
+	if e.Type != nemgen.EntityType_ENTITY_TYPE_STANDALONE {
+		return selects
+	}
+
+	// add select by primary key(s)
+	primaryKeys := domainhelpers.EntityPrimaryKeys(e)
+	if len(primaryKeys) > 0 {
+		primaryIdentifiers := []string{}
+		for _, pk := range primaryKeys {
+			primaryIdentifiers = append(primaryIdentifiers, strcase.ToCamel(pk.Identifier))
+		}
+		finalPKName := strings.Join(primaryIdentifiers, "And")
+
+		nameByID := fmt.Sprintf("%sBy%s", strcase.ToCamel(e.Identifier), finalPKName)
+		selects = append(selects, SchemaSelectStatement{
+			Name:             nameByID,
+			Identifier:       strcase.ToSnake(nameByID),
+			EntityIdentifier: e.Identifier,
+			Fields:           mapFieldsToSelectFields(primaryKeys, dbType),
+			IsPrimary:        true,
+			SortSupported:    false,
+		})
+	}
+
+	// if there are not indexes return
+	if e.TypeConfig == nil || e.TypeConfig.Standalone == nil || len(e.TypeConfig.Standalone.Indexes) == 0 {
+		return selects
+	}
+
+	fieldMap := make(map[string]*nemgen.Field)
+	for _, f := range e.Fields {
+		fieldMap[f.Uuid] = f
+	}
+
+	// filter out indexes that are not datetime
+	indexes := e.TypeConfig.Standalone.Indexes
+	indexIds := []string{}
+	indexMap := make(map[string]*nemgen.Index)
+	timeFields := []SchemaField{}
+	for _, i := range indexes {
+		if len(i.Fields) == 1 {
+			field := fieldMap[i.Fields[0].FieldUuid]
+			ft := field.Type
+			if ft == nemgen.FieldType_FIELD_TYPE_DATETIME || ft == nemgen.FieldType_FIELD_TYPE_DATE {
+				timeFields = append(timeFields, mapField(field, dbType))
+			} else {
+				indexIds = append(indexIds, i.Uuid)
+				indexMap[i.Uuid] = i
+			}
+		} else {
+			indexIds = append(indexIds, i.Uuid)
+			indexMap[i.Uuid] = i
+		}
+	}
+
+	// combine all indexes
+	combinations := Combinations(indexIds)
+	for _, combination := range combinations {
+		name := fmt.Sprintf("%sBy", strcase.ToCamel(e.Identifier))
+		fields := map[string]SchemaSelectStatementField{}
+		first := true
+
+		// for each combination of indexes
+		for i, indexUUID := range combination {
+			isLast := true
+			if i < len(combination)-1 {
+				isLast = false
+			}
+
+			// get the fields of the index
+			indexFields := indexMap[indexUUID].Fields
+			for _, indexField := range indexFields {
+				_, exists := fields[indexField.FieldUuid]
+				if !exists {
+					field := fieldMap[indexField.FieldUuid]
+					fields[indexField.FieldUuid] = SchemaSelectStatementField{
+						Name:   field.Identifier,
+						Field:  mapField(field, dbType),
+						IsLast: isLast,
+					}
+
+					if first {
+						first = false
+						name = fmt.Sprintf("%s%s", name, strcase.ToCamel(field.Identifier))
+					} else {
+						name = fmt.Sprintf("%sAnd%s", name, strcase.ToCamel(field.Identifier))
+					}
+				}
+			}
+
+		}
+
+		finalFields := []SchemaSelectStatementField{}
+		for _, f := range fields {
+			finalFields = append(finalFields, f)
+		}
+
+		sortSupported := false
+		if len(timeFields) > 0 {
+			sortSupported = true
+		}
+
+		selects = append(selects, SchemaSelectStatement{
+			Name:             name,
+			Identifier:       strcase.ToSnake(name),
+			EntityIdentifier: e.Identifier,
+			Fields:           finalFields,
+			TimeFields:       timeFields,
+			SortSupported:    sortSupported,
+		})
+	}
+
+	return selects
+}
+
+func Combinations(set []string) (subsets [][]string) {
+	length := uint(len(set))
+
+	// Go through all possible combinations of objects
+	// from 1 (only first object in subset) to 2^length (all objects in subset)
+	for subsetBits := 1; subsetBits < (1 << length); subsetBits++ {
+		var subset []string
+
+		for object := uint(0); object < length; object++ {
+			// checks if object is contained in subset
+			// by checking if bit 'object' is set in subsetBits
+			if (subsetBits>>object)&1 == 1 {
+				// add object to subset
+				subset = append(subset, set[object])
+			}
+		}
+		// add subset to subsets
+		subsets = append(subsets, subset)
+	}
+	return subsets
+}

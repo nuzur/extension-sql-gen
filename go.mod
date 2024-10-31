@@ -4,7 +4,8 @@ go 1.22.3
 
 require (
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/nuzur/extension-sdk v0.0.14
+	github.com/iancoleman/strcase v0.3.0
+	github.com/nuzur/extension-sdk v0.0.15
 	go.uber.org/fx v1.23.0
 	google.golang.org/grpc v1.67.1
 )

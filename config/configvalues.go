@@ -7,7 +7,7 @@ const (
 	SelectForIndexedSimpleAction   Action = "select-indexed-simple"
 	SelectForIndexedCombinedAction Action = "select-indexed-combined"
 	InsertAction                   Action = "insert"
-	updateAction                   Action = "update"
+	UpdateAction                   Action = "update"
 	DeleteAction                   Action = "delete"
 	CreateAction                   Action = "create"
 )

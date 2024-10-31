@@ -11,7 +11,7 @@ type SchemaTemplate struct {
 type SchemaEntity struct {
 	Name             string
 	NameTitle        string
-	PrimaryKey       string
+	PrimaryKeys      []string
 	Fields           []SchemaField
 	Indexes          []SchemaIndex
 	SelectStatements []SchemaSelectStatement

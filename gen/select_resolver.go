@@ -10,7 +10,7 @@ import (
 	"github.com/nuzur/extension-sql-gen/config"
 )
 
-func ResolveSelectStatements(project *nemgen.Project, e *nemgen.Entity, dbType config.DBType) []SchemaSelectStatement {
+func ResolveSelectStatements(e *nemgen.Entity, dbType config.DBType) []SchemaSelectStatement {
 	selects := []SchemaSelectStatement{}
 	if e.Type != nemgen.EntityType_ENTITY_TYPE_STANDALONE {
 		return selects

@@ -1,0 +1,44 @@
+{{range $entity := .Entities}}
+
+{{range $select := $entity.SelectStatements}}    
+-- name: Fetch{{$select.Name}} :many
+SELECT {{range $field := $entity.Fields}}`{{$field.Name}}`{{if eq $field.HasComma true}},{{end}}{{end}} 
+FROM {{$entity.Name}}
+WHERE 
+    {{range $field := $select.Fields}} {{$field.Name}} = ? {{if ne $field.IsLast true}}AND{{end}}{{end}} 
+    {{if eq $select.IsPrimary false}}LIMIT ?, ?{{end}};
+
+        {{ if eq $select.IsPrimary true}}
+-- name: Fetch{{$select.Name}}ForUpdate :many
+SELECT {{range $field := $entity.Fields}}`{{$field.Name}}`{{if eq $field.HasComma true}},{{end}}{{end}}
+FROM {{$entity.Name}}
+WHERE 
+    {{range $field := $select.Fields}} {{$field.Name}} = ? {{if ne $field.IsLast true}}AND{{end}}{{end}}     
+FOR UPDATE;
+        {{ end }}    
+{{ end }}
+
+{{range $select := $entity.SelectStatements}}
+    {{if eq $select.SortSupported true}}
+        {{range $timeField := $select.TimeFields}}
+-- name: Fetch{{$select.Name}}OrderedBy{{$timeField.Name}}ASC :many
+SELECT {{range $field := $entity.Fields}}`{{$field.Name}}`{{if eq $field.HasComma true}},{{end}}{{end}}
+FROM {{$entity.Name}}
+WHERE 
+    {{range $field := $select.Fields}} {{$field.Name}} = ? {{if ne $field.IsLast true}}AND{{end}}{{end}} 
+    ORDER BY {{$timeField.Identifier}} ASC
+    LIMIT ?, ?;
+
+-- name: Fetch{{$select.Name}}OrderedBy{{$timeField.Name}}DESC :many
+SELECT {{range $field := $entity.Fields}}`{{$field.Name}}`{{if eq $field.HasComma true}},{{end}}{{end}}
+FROM {{$entity.Name}}
+WHERE 
+    {{range $field := $select.Fields}} {{$field.Name}} = ? {{if ne $field.IsLast true}}AND{{end}}{{end}} 
+    ORDER BY {{$timeField.Identifier}} DESC
+    LIMIT ?, ?;
+
+        {{end}}
+    {{end}}
+{{end}}
+
+{{end}}

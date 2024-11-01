@@ -90,6 +90,7 @@ type SchemaSelectStatement struct {
 	Identifier       string
 	EntityIdentifier string
 	Fields           []SchemaSelectStatementField
+	CombinedIndexes  bool
 	IsPrimary        bool
 	TimeFields       []SchemaField
 	SortSupported    bool

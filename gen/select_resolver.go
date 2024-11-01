@@ -121,6 +121,7 @@ func ResolveSelectStatements(e *nemgen.Entity, dbType config.DBType) []SchemaSel
 			Fields:           finalFields,
 			TimeFields:       timeFields,
 			SortSupported:    sortSupported,
+			CombinedIndexes:  len(combination) > 1,
 		})
 	}
 

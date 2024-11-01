@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path"
 	"slices"
 	"sync"
 
+	"github.com/gofrs/uuid"
 	"github.com/iancoleman/strcase"
 	"github.com/nuzur/extension-sdk/client"
 	"github.com/nuzur/extension-sdk/domainhelpers"
@@ -19,6 +22,7 @@ import (
 type GenerateRequest struct {
 	ExecutionUUID string
 	Configvalues  *config.Values
+	Client        *client.Client
 	Deps          *client.BaseDependenciesResponse
 }
 
@@ -65,7 +69,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 		ExecutionUUID: req.ExecutionUUID,
 		Configvalues:  configvalues,
 		Data:          tpl,
-		DisplayBlocks: displayBlocks,
+		DisplayBlocks: &displayBlocks,
 	}
 
 	genFuncs := []func(context.Context, *generateRequest) error{
@@ -89,13 +93,36 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 		return nil, err
 	}
 
-	sdkgen.GenerateZip(ctx, sdkgen.ZipRequest{
+	err = sdkgen.GenerateZip(ctx, sdkgen.ZipRequest{
 		ExecutionUUID: req.ExecutionUUID,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	zipData, err := os.ReadFile(path.Join("executions", fmt.Sprintf("%s.zip", req.ExecutionUUID)))
+	if err != nil {
+		return nil, err
+	}
+
+	url, err := req.Client.UploadResults(ctx, client.UploadResultsRequest{
+		ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
+		ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
+		ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
+		Data:               zipData,
+		FileExtension:      "zip",
+	})
+	if err != nil || url == nil {
+		return nil, err
+	}
+
+	// cleanup
+	os.RemoveAll(path.Join("executions", req.ExecutionUUID))
+	os.RemoveAll(path.Join("executions", fmt.Sprintf("%s.zip", req.ExecutionUUID)))
 
 	return &GenerateResponse{
 		DisplayBlocks:   displayBlocks,
-		FileDownloadUrl: "",
+		FileDownloadUrl: *url,
 	}, nil
 }
 
@@ -104,7 +131,7 @@ type generateRequest struct {
 	ExecutionUUID string
 	Configvalues  *config.Values
 	Data          SchemaTemplate
-	DisplayBlocks []*pb.ExecutionResponseDisplayBlock
+	DisplayBlocks *[]*pb.ExecutionResponseDisplayBlock
 }
 
 func generateCreates(ctx context.Context, req *generateRequest) error {
@@ -120,7 +147,7 @@ func generateCreates(ctx context.Context, req *generateRequest) error {
 			return err
 		}
 		req.mu.Lock()
-		req.DisplayBlocks = append(req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
+		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
 			Identifier:  string(config.CreateAction),
 			Title:       "Create SQL",
 			Description: "",
@@ -144,7 +171,7 @@ func generateInserts(ctx context.Context, req *generateRequest) error {
 			return err
 		}
 		req.mu.Lock()
-		req.DisplayBlocks = append(req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
+		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
 			Identifier:  string(config.InsertAction),
 			Title:       "Insert SQL",
 			Description: "",
@@ -168,7 +195,7 @@ func generateUpdates(ctx context.Context, req *generateRequest) error {
 			return err
 		}
 		req.mu.Lock()
-		req.DisplayBlocks = append(req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
+		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
 			Identifier:  string(config.UpdateAction),
 			Title:       "Update SQL",
 			Description: "",
@@ -192,7 +219,7 @@ func generateDeletes(ctx context.Context, req *generateRequest) error {
 			return err
 		}
 		req.mu.Lock()
-		req.DisplayBlocks = append(req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
+		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
 			Identifier:  string(config.DeleteAction),
 			Title:       "Delete SQL",
 			Description: "",
@@ -216,7 +243,7 @@ func generateSimpleSelects(ctx context.Context, req *generateRequest) error {
 			return err
 		}
 		req.mu.Lock()
-		req.DisplayBlocks = append(req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
+		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
 			Identifier:  string(config.SelectSimpleAction),
 			Title:       "Select Simple SQL",
 			Description: "",
@@ -240,7 +267,7 @@ func generateIndexedSimpleSelects(ctx context.Context, req *generateRequest) err
 			return err
 		}
 		req.mu.Lock()
-		req.DisplayBlocks = append(req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
+		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
 			Identifier:  string(config.SelectForIndexedSimpleAction),
 			Title:       "Select Indexed Simple SQL",
 			Description: "",
@@ -264,7 +291,7 @@ func generateIndexedCombinedSelects(ctx context.Context, req *generateRequest) e
 			return err
 		}
 		req.mu.Lock()
-		req.DisplayBlocks = append(req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
+		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
 			Identifier:  string(config.SelectForIndexedCombinedAction),
 			Title:       "Select Indexed Combined SQL",
 			Description: "",

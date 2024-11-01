@@ -47,6 +47,7 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 
 	res, err := gen.Generate(ctx, gen.GenerateRequest{
 		ExecutionUUID: exec.Uuid,
+		Client:        s.client,
 		Configvalues:  configvalues,
 		Deps:          deps,
 	})

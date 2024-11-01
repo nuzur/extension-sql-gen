@@ -14,16 +14,16 @@ func MapEntityToTypes(e *nemgen.Entity, dbType config.DBType) ([]SchemaField, []
 
 	identifers := make(map[string]string)
 	for _, f := range e.Fields {
-		identifers[f.Uuid] = f.Identifier
+		if f.Status == nemgen.FieldStatus_FIELD_STATUS_ACTIVE {
+			identifers[f.Uuid] = f.Identifier
+			ft := mapField(f, dbType)
+			fields = append(fields, ft)
+		}
 	}
 
-	for _, f := range e.Fields {
-
-		ft := mapField(f, dbType)
-		fields = append(fields, ft)
-
-		if e.TypeConfig != nil && e.TypeConfig.Standalone != nil {
-			for _, i := range e.TypeConfig.Standalone.Indexes {
+	if e.TypeConfig != nil && e.TypeConfig.Standalone != nil {
+		for _, i := range e.TypeConfig.Standalone.Indexes {
+			if i.Status == nemgen.IndexStatus_INDEX_STATUS_ACTIVE {
 				fieldNames := make(map[string]string)
 				for _, fi := range i.Fields {
 					fieldNames[fi.FieldUuid] = identifers[fi.FieldUuid]

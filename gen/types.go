@@ -58,10 +58,27 @@ type SchemaField struct {
 	Unique   string
 }
 
+func (f SchemaField) Postfix() string {
+	res := []string{}
+	if f.Null != "" {
+		res = append(res, f.Null)
+	}
+	if f.Unique != "" {
+		res = append(res, f.Unique)
+	}
+	if f.Default != "" {
+		res = append(res, f.Default)
+	}
+	return strings.Join(res, " ")
+}
+
 type SchemaIndex struct {
 	Name       string
 	FieldNames map[string]string
 	Index      *nemgen.Index
+	TypePrefix string
+	Type       string
+	TypeSort   int
 	HasComma   bool
 }
 

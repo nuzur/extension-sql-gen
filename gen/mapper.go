@@ -1,6 +1,8 @@
 package gen
 
 import (
+	"sort"
+
 	nemgen "github.com/nuzur/extension-sdk/proto_deps/nem/idl/gen"
 	"github.com/nuzur/extension-sql-gen/config"
 )
@@ -28,10 +30,44 @@ func MapEntityToTypes(e *nemgen.Entity, dbType config.DBType) ([]SchemaField, []
 				for _, fi := range i.Fields {
 					fieldNames[fi.FieldUuid] = identifers[fi.FieldUuid]
 				}
+
+				indexTypePrefix := ""
+				if i.Type == nemgen.IndexType_INDEX_TYPE_UNIQUE {
+					indexTypePrefix = "UNIQUE "
+				}
+				if i.Type == nemgen.IndexType_INDEX_TYPE_FULLTEXT {
+					indexTypePrefix = "FULLTEXT "
+				}
+
+				indexType := ""
+				indexTypeSort := 0
+
+				switch i.Type {
+				case nemgen.IndexType_INDEX_TYPE_UNIQUE:
+					indexType = "unique"
+					indexTypeSort = 2
+				case nemgen.IndexType_INDEX_TYPE_PRIMARY:
+					indexType = "primary"
+					indexTypeSort = 0
+				case nemgen.IndexType_INDEX_TYPE_INDEX:
+					indexType = "index"
+					indexTypeSort = 1
+				case nemgen.IndexType_INDEX_TYPE_FULLTEXT:
+					indexType = "fulltext"
+					indexTypeSort = 3
+				}
+
 				indexes = append(indexes, SchemaIndex{
 					Name:       i.Identifier,
 					Index:      i,
 					FieldNames: fieldNames,
+					Type:       indexType,
+					TypeSort:   indexTypeSort,
+					TypePrefix: indexTypePrefix,
+				})
+
+				sort.Slice(indexes, func(i, j int) bool {
+					return indexes[i].TypeSort < indexes[j].TypeSort
 				})
 			}
 		}

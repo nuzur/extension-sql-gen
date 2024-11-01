@@ -58,12 +58,16 @@ func ResolveSelectStatements(e *nemgen.Entity, dbType config.DBType) []SchemaSel
 			if ft == nemgen.FieldType_FIELD_TYPE_DATETIME || ft == nemgen.FieldType_FIELD_TYPE_DATE {
 				timeFields = append(timeFields, mapField(field, dbType))
 			} else {
+				if i.Type == nemgen.IndexType_INDEX_TYPE_INDEX {
+					indexIds = append(indexIds, i.Uuid)
+					indexMap[i.Uuid] = i
+				}
+			}
+		} else {
+			if i.Type == nemgen.IndexType_INDEX_TYPE_INDEX {
 				indexIds = append(indexIds, i.Uuid)
 				indexMap[i.Uuid] = i
 			}
-		} else {
-			indexIds = append(indexIds, i.Uuid)
-			indexMap[i.Uuid] = i
 		}
 	}
 

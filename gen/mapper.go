@@ -3,6 +3,7 @@ package gen
 import (
 	"sort"
 
+	"github.com/iancoleman/strcase"
 	nemgen "github.com/nuzur/extension-sdk/proto_deps/nem/idl/gen"
 	"github.com/nuzur/extension-sql-gen/config"
 )
@@ -100,10 +101,11 @@ func mapField(f *nemgen.Field, dbType config.DBType) SchemaField {
 	}
 
 	ft := SchemaField{
-		Name:  f.Identifier,
-		Type:  fieldType,
-		Field: f,
-		Null:  notNull,
+		Name:      f.Identifier,
+		NameTitle: strcase.ToCamel(f.Identifier),
+		Type:      fieldType,
+		Field:     f,
+		Null:      notNull,
 	}
 
 	if f.Unique {

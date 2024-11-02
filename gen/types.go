@@ -49,13 +49,14 @@ func (e SchemaEntity) UpdateFields() string {
 }
 
 type SchemaField struct {
-	Name     string
-	Type     string
-	Field    *nemgen.Field
-	Null     string
-	HasComma bool
-	Default  string
-	Unique   string
+	Name      string
+	NameTitle string
+	Type      string
+	Field     *nemgen.Field
+	Null      string
+	HasComma  bool
+	Default   string
+	Unique    string
 }
 
 func (f SchemaField) Postfix() string {

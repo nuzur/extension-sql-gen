@@ -43,6 +43,12 @@ func MapEntityToTypes(e *nemgen.Entity, projectVersion *nemgen.ProjectVersion, d
 		}
 	}
 
+	if len(constraints) > 0 {
+		for i := 0; i < len(constraints)-1; i++ {
+			constraints[i].HasComma = true
+		}
+	}
+
 	if len(fields) > 0 {
 		for i := 0; i < len(fields)-1; i++ {
 			fields[i].HasComma = true

@@ -67,9 +67,6 @@ func (f SchemaField) Postfix() string {
 	if f.Null != "" {
 		res = append(res, f.Null)
 	}
-	if f.Unique != "" {
-		res = append(res, f.Unique)
-	}
 	if f.Default != "" {
 		res = append(res, f.Default)
 	}
@@ -131,6 +128,7 @@ type SchemaConstraint struct {
 	Relationship *nemgen.Relationship
 	TableName    string
 	Fields       []SchemaField
+	HasComma     bool
 }
 
 func (sc SchemaConstraint) ForeignKeyFields() string {

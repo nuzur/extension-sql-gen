@@ -12,7 +12,7 @@ SELECT {{ range $field := $entity.Fields -}}
 FROM {{$entity.Name}}
 WHERE 
     {{range $field := $select.Fields -}} 
-    `{{- $field.Name}}` = ? {{- if ne $field.IsLast true }} AND {{ end -}}
+    `{{- $field.Name}}` = ? {{ if ne $field.IsLast true }}AND {{ end -}}
     {{- end}}{{- if eq $select.IsPrimary true }};{{- end}}
 {{ if eq $select.IsPrimary false -}}LIMIT ?, ?;{{- end}}        
     {{ end }}
@@ -28,7 +28,7 @@ SELECT {{ range $field := $entity.Fields -}}
 FROM {{$entity.Name}}
 WHERE 
     {{range $field := $select.Fields -}} 
-    `{{- $field.Name}}` = ? {{- if ne $field.IsLast true}} AND {{ end -}} 
+    `{{- $field.Name}}` = ? {{ if ne $field.IsLast true}}AND {{ end -}} 
     {{- end}}
 FOR UPDATE;
         {{ end -}}
@@ -45,7 +45,7 @@ SELECT {{ range $field := $entity.Fields -}}
 FROM {{$entity.Name}}
 WHERE 
     {{range $field := $select.Fields -}} 
-    `{{- $field.Name}}` = ? {{- if ne $field.IsLast true}} AND {{ end -}} 
+    `{{- $field.Name}}` = ? {{ if ne $field.IsLast true}}AND {{ end -}} 
     {{- end}} 
 ORDER BY {{$timeField.Name}} ASC
 LIMIT ?, ?;
@@ -58,7 +58,7 @@ SELECT {{ range $field := $entity.Fields -}}
 FROM {{$entity.Name}}
 WHERE 
     {{range $field := $select.Fields -}}
-    `{{- $field.Name}}` = ? {{- if ne $field.IsLast true }} AND {{ end -}} 
+    `{{- $field.Name}}` = ? {{ if ne $field.IsLast true }}AND {{ end -}} 
     {{- end}} 
 ORDER BY {{$timeField.Name}} DESC
 LIMIT ?, ?;

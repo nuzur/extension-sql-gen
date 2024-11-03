@@ -2,6 +2,7 @@ package gen
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/iancoleman/strcase"
 	nemgen "github.com/nuzur/extension-sdk/proto_deps/nem/idl/gen"
@@ -132,6 +133,10 @@ func mapFieldsToSelectFields(fields []*nemgen.Field, dbType config.DBType) []Sch
 		}
 		res = append(res, nf)
 	}
+
+	sort.Slice(res, func(i, j int) bool {
+		return strings.Compare(res[i].Name, res[j].Name) < 0
+	})
 
 	if len(res) > 0 {
 		res[len(res)-1].IsLast = true

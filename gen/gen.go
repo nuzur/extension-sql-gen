@@ -24,6 +24,7 @@ type GenerateRequest struct {
 	Configvalues  *config.Values
 	Client        *client.Client
 	Deps          *client.BaseDependenciesResponse
+	DisableUpload bool
 }
 
 type GenerateResponse struct {
@@ -105,15 +106,19 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 		return nil, err
 	}
 
-	url, err := req.Client.UploadResults(ctx, client.UploadResultsRequest{
-		ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
-		ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
-		ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
-		Data:               zipData,
-		FileExtension:      "zip",
-	})
-	if err != nil || url == nil {
-		return nil, err
+	downloadUrl := ""
+	if !req.DisableUpload {
+		url, err := req.Client.UploadResults(ctx, client.UploadResultsRequest{
+			ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
+			ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
+			ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
+			Data:               zipData,
+			FileExtension:      "zip",
+		})
+		if err != nil || url == nil {
+			return nil, err
+		}
+		downloadUrl = *url
 	}
 
 	// cleanup
@@ -122,7 +127,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 
 	return &GenerateResponse{
 		DisplayBlocks:   displayBlocks,
-		FileDownloadUrl: *url,
+		FileDownloadUrl: downloadUrl,
 	}, nil
 }
 

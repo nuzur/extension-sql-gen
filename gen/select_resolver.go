@@ -2,6 +2,7 @@ package gen
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/iancoleman/strcase"
@@ -79,11 +80,7 @@ func ResolveSelectStatements(e *nemgen.Entity, dbType config.DBType) []SchemaSel
 		first := true
 
 		// for each combination of indexes
-		for i, indexUUID := range combination {
-			isLast := true
-			if i < len(combination)-1 {
-				isLast = false
-			}
+		for _, indexUUID := range combination {
 
 			// get the fields of the index
 			indexFields := indexMap[indexUUID].Fields
@@ -94,7 +91,7 @@ func ResolveSelectStatements(e *nemgen.Entity, dbType config.DBType) []SchemaSel
 					fields[indexField.FieldUuid] = SchemaSelectStatementField{
 						Name:   field.Identifier,
 						Field:  mapField(field, dbType),
-						IsLast: isLast,
+						IsLast: false,
 					}
 
 					if first {
@@ -111,6 +108,13 @@ func ResolveSelectStatements(e *nemgen.Entity, dbType config.DBType) []SchemaSel
 		finalFields := []SchemaSelectStatementField{}
 		for _, f := range fields {
 			finalFields = append(finalFields, f)
+		}
+		sort.Slice(finalFields, func(i, j int) bool {
+			return strings.Compare(finalFields[i].Name, finalFields[j].Name) < 0
+		})
+
+		if len(finalFields) > 0 {
+			finalFields[len(finalFields)-1].IsLast = true
 		}
 
 		sortSupported := false

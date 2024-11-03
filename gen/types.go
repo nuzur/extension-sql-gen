@@ -13,12 +13,14 @@ type SchemaTemplate struct {
 	Entities []SchemaEntity
 }
 
+// entity
 type SchemaEntity struct {
 	Name             string
 	NameTitle        string
 	PrimaryKeys      []string
 	Fields           []SchemaField
 	Indexes          []SchemaIndex
+	Constraints      []SchemaConstraint
 	SelectStatements []SchemaSelectStatement
 }
 
@@ -48,6 +50,7 @@ func (e SchemaEntity) UpdateFields() string {
 	return strings.Join(fields, ", ")
 }
 
+// field
 type SchemaField struct {
 	Name      string
 	NameTitle string
@@ -73,6 +76,7 @@ func (f SchemaField) Postfix() string {
 	return strings.Join(res, " ")
 }
 
+// index
 type SchemaIndex struct {
 	Name       string
 	FieldNames map[string]string
@@ -103,6 +107,7 @@ func (i SchemaIndex) FieldNamesIdentifiers() string {
 	return fmt.Sprintf("(%s)", strings.Join(fieldsStr, ", "))
 }
 
+// select
 type SchemaSelectStatement struct {
 	Name             string
 	Identifier       string
@@ -118,4 +123,36 @@ type SchemaSelectStatementField struct {
 	Name   string
 	Field  SchemaField
 	IsLast bool
+}
+
+// contraints
+type SchemaConstraint struct {
+	Name         string
+	Relationship *nemgen.Relationship
+	TableName    string
+	Fields       []SchemaField
+}
+
+func (sc SchemaConstraint) ForeignKeyFields() string {
+	sort.Slice(sc.Fields, func(i, j int) bool {
+		return strings.Compare(sc.Fields[i].Name, sc.Fields[j].Name) < 1
+	})
+	fields := []string{}
+	for _, f := range sc.Fields {
+		fields = append(fields, fmt.Sprintf("`%s_%s`", sc.TableName, f.Name))
+	}
+
+	return strings.Join(fields, ", ")
+}
+
+func (sc SchemaConstraint) ReferenceFields() string {
+	sort.Slice(sc.Fields, func(i, j int) bool {
+		return strings.Compare(sc.Fields[i].Name, sc.Fields[j].Name) < 1
+	})
+	fields := []string{}
+	for _, f := range sc.Fields {
+		fields = append(fields, fmt.Sprintf("`%s`", f.Name))
+	}
+
+	return strings.Join(fields, ", ")
 }

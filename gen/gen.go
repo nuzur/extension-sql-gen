@@ -43,7 +43,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 	entities := []SchemaEntity{}
 	for _, e := range projectVersion.Entities {
 		if slices.Contains(configvalues.Entities, e.Uuid) {
-			fields, indexes := MapEntityToTypes(e, configvalues.DBType)
+			fields, indexes, constraints := MapEntityToTypes(e, projectVersion, configvalues.DBType)
 			selects := ResolveSelectStatements(e, configvalues.DBType)
 			primaryKeys := domainhelpers.EntityPrimaryKeys(e)
 			primaryKeysIdentifiers := []string{}
@@ -56,6 +56,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 				PrimaryKeys:      primaryKeysIdentifiers,
 				Fields:           fields,
 				Indexes:          indexes,
+				Constraints:      constraints,
 				SelectStatements: selects,
 			}
 			entities = append(entities, entityTemplate)

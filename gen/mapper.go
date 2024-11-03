@@ -9,70 +9,32 @@ import (
 	"github.com/nuzur/extension-sql-gen/config"
 )
 
-func MapEntityToTypes(e *nemgen.Entity, dbType config.DBType) ([]SchemaField, []SchemaIndex) {
+func MapEntityToTypes(e *nemgen.Entity, projectVersion *nemgen.ProjectVersion, dbType config.DBType) ([]SchemaField, []SchemaIndex, []SchemaConstraint) {
 	fields := []SchemaField{}
 	indexes := []SchemaIndex{}
+	constraints := []SchemaConstraint{}
+
+	// if not standalone return
 	if e.Type != nemgen.EntityType_ENTITY_TYPE_STANDALONE {
-		return fields, indexes
+		return fields, indexes, constraints
 	}
 
-	identifers := make(map[string]string)
+	// field identifiers map
+	fieldIdentifers := make(map[string]string)
 	for _, f := range e.Fields {
 		if f.Status == nemgen.FieldStatus_FIELD_STATUS_ACTIVE {
-			identifers[f.Uuid] = f.Identifier
+			fieldIdentifers[f.Uuid] = f.Identifier
 			ft := mapField(f, dbType)
 			fields = append(fields, ft)
 		}
 	}
 
 	if e.TypeConfig != nil && e.TypeConfig.Standalone != nil {
-		for _, i := range e.TypeConfig.Standalone.Indexes {
-			if i.Status == nemgen.IndexStatus_INDEX_STATUS_ACTIVE {
-				fieldNames := make(map[string]string)
-				for _, fi := range i.Fields {
-					fieldNames[fi.FieldUuid] = identifers[fi.FieldUuid]
-				}
+		// map indexes
+		indexes = mapIndexes(e, fieldIdentifers)
 
-				indexTypePrefix := ""
-				if i.Type == nemgen.IndexType_INDEX_TYPE_UNIQUE {
-					indexTypePrefix = "UNIQUE "
-				}
-				if i.Type == nemgen.IndexType_INDEX_TYPE_FULLTEXT {
-					indexTypePrefix = "FULLTEXT "
-				}
-
-				indexType := ""
-				indexTypeSort := 0
-
-				switch i.Type {
-				case nemgen.IndexType_INDEX_TYPE_UNIQUE:
-					indexType = "unique"
-					indexTypeSort = 2
-				case nemgen.IndexType_INDEX_TYPE_PRIMARY:
-					indexType = "primary"
-					indexTypeSort = 0
-				case nemgen.IndexType_INDEX_TYPE_INDEX:
-					indexType = "index"
-					indexTypeSort = 1
-				case nemgen.IndexType_INDEX_TYPE_FULLTEXT:
-					indexType = "fulltext"
-					indexTypeSort = 3
-				}
-
-				indexes = append(indexes, SchemaIndex{
-					Name:       i.Identifier,
-					Index:      i,
-					FieldNames: fieldNames,
-					Type:       indexType,
-					TypeSort:   indexTypeSort,
-					TypePrefix: indexTypePrefix,
-				})
-
-				sort.Slice(indexes, func(i, j int) bool {
-					return indexes[i].TypeSort < indexes[j].TypeSort
-				})
-			}
-		}
+		// map relationships to constraints
+		constraints = mapRelationships(e, projectVersion)
 	}
 
 	if len(indexes) > 0 {
@@ -87,7 +49,7 @@ func MapEntityToTypes(e *nemgen.Entity, dbType config.DBType) ([]SchemaField, []
 		}
 	}
 
-	return fields, indexes
+	return fields, indexes, constraints
 }
 
 func mapField(f *nemgen.Field, dbType config.DBType) SchemaField {
@@ -144,4 +106,116 @@ func mapFieldsToSelectFields(fields []*nemgen.Field, dbType config.DBType) []Sch
 
 	return res
 
+}
+
+func mapIndexes(e *nemgen.Entity, fieldIdentifers map[string]string) []SchemaIndex {
+	indexes := []SchemaIndex{}
+	for _, i := range e.TypeConfig.Standalone.Indexes {
+		if i.Status == nemgen.IndexStatus_INDEX_STATUS_ACTIVE {
+			fieldNames := make(map[string]string)
+			for _, fi := range i.Fields {
+				fieldNames[fi.FieldUuid] = fieldIdentifers[fi.FieldUuid]
+			}
+
+			indexTypePrefix := ""
+			if i.Type == nemgen.IndexType_INDEX_TYPE_UNIQUE {
+				indexTypePrefix = "UNIQUE "
+			}
+			if i.Type == nemgen.IndexType_INDEX_TYPE_FULLTEXT {
+				indexTypePrefix = "FULLTEXT "
+			}
+
+			indexType := ""
+			indexTypeSort := 0
+
+			switch i.Type {
+			case nemgen.IndexType_INDEX_TYPE_UNIQUE:
+				indexType = "unique"
+				indexTypeSort = 2
+			case nemgen.IndexType_INDEX_TYPE_PRIMARY:
+				indexType = "primary"
+				indexTypeSort = 0
+			case nemgen.IndexType_INDEX_TYPE_INDEX:
+				indexType = "index"
+				indexTypeSort = 1
+			case nemgen.IndexType_INDEX_TYPE_FULLTEXT:
+				indexType = "fulltext"
+				indexTypeSort = 3
+			}
+
+			indexes = append(indexes, SchemaIndex{
+				Name:       i.Identifier,
+				Index:      i,
+				FieldNames: fieldNames,
+				Type:       indexType,
+				TypeSort:   indexTypeSort,
+				TypePrefix: indexTypePrefix,
+			})
+
+			sort.Slice(indexes, func(i, j int) bool {
+				return indexes[i].TypeSort < indexes[j].TypeSort
+			})
+		}
+	}
+	return indexes
+}
+
+func mapRelationships(e *nemgen.Entity, projectVersion *nemgen.ProjectVersion) []SchemaConstraint {
+	res := []SchemaConstraint{}
+
+	entityIdentifiers := make(map[string]string)
+	entityMap := make(map[string]*nemgen.Entity)
+	for _, e := range projectVersion.Entities {
+		entityIdentifiers[e.Uuid] = e.Identifier
+		entityMap[e.Uuid] = e
+	}
+
+	for _, relationship := range projectVersion.Relationships {
+		if relationship.To != nil &&
+			relationship.To.TypeConfig != nil &&
+			relationship.To.TypeConfig.Entity != nil &&
+			relationship.From != nil &&
+			relationship.From.TypeConfig != nil &&
+			relationship.From.TypeConfig.Entity != nil &&
+			relationship.UseForeignKey {
+
+			toEntity := relationship.To.TypeConfig.Entity
+			fromEntity := relationship.From.TypeConfig.Entity
+
+			if entityMap[toEntity.EntityUuid].Type == nemgen.EntityType_ENTITY_TYPE_STANDALONE &&
+				entityMap[fromEntity.EntityUuid].Type == nemgen.EntityType_ENTITY_TYPE_STANDALONE {
+				if fromEntity.EntityUuid == e.Uuid {
+					fieldUuids := relationship.To.TypeConfig.Entity.FieldUuids
+					fieldIdentifers := mapFieldIdentifiers(entityMap[toEntity.EntityUuid])
+					if len(fieldUuids) > 0 {
+						fields := []SchemaField{}
+						for _, fu := range fieldUuids {
+							fields = append(fields, SchemaField{
+								Name:      fieldIdentifers[fu],
+								NameTitle: strcase.ToCamel(fieldIdentifers[fu]),
+							})
+						}
+						res = append(res, SchemaConstraint{
+							Name:         relationship.Identifier,
+							Relationship: relationship,
+							TableName:    entityIdentifiers[toEntity.EntityUuid],
+							Fields:       fields,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return res
+}
+
+func mapFieldIdentifiers(e *nemgen.Entity) map[string]string {
+	fieldIdentifers := make(map[string]string)
+	for _, f := range e.Fields {
+		if f.Status == nemgen.FieldStatus_FIELD_STATUS_ACTIVE {
+			fieldIdentifers[f.Uuid] = f.Identifier
+		}
+	}
+	return fieldIdentifers
 }

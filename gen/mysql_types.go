@@ -72,7 +72,7 @@ func FieldTypeToMYSQL(f *nemgen.Field) string {
 		}
 		return "VARCHAR(255)" // default
 	case nemgen.FieldType_FIELD_TYPE_EMAIL: // 10
-		return "VARCHAR(1024)" // default
+		return "VARCHAR(512)" // default
 	case nemgen.FieldType_FIELD_TYPE_PHONE: // 11
 		return "VARCHAR(50)" // default
 	case nemgen.FieldType_FIELD_TYPE_URL: // 12
@@ -104,7 +104,7 @@ func FieldTypeToMYSQL(f *nemgen.Field) string {
 	case nemgen.FieldType_FIELD_TYPE_TIME: // 27
 		return "TIME"
 	case nemgen.FieldType_FIELD_TYPE_SLUG: // 28
-		return "VARCHAR(1024)" // default
+		return "VARCHAR(512)" // default
 	}
 	return ""
 }

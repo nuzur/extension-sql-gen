@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS `user` (
     `uuid` CHAR(36) NOT NULL,
     `version` INT NOT NULL,
-    `email` VARCHAR(1024),
+    `email` VARCHAR(512),
     `password` VARCHAR(255),
     `status` INT NOT NULL,
     `created_at` DATETIME NOT NULL default CURRENT_TIMESTAMP,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `post` (
     `uuid` CHAR(36) NOT NULL,
     `version` INT NOT NULL,
     `title` VARCHAR(255) NOT NULL,
-    `slug` VARCHAR(1024) NOT NULL,
+    `slug` VARCHAR(512) NOT NULL,
     `description` VARCHAR(255),
     `content` TEXT,
     `status` INT NOT NULL,

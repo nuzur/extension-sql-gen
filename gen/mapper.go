@@ -62,6 +62,8 @@ func mapField(f *nemgen.Field, dbType config.DBType) SchemaField {
 	fieldType := ""
 	if dbType == config.MYSQLDBType {
 		fieldType = FieldTypeToMYSQL(f)
+	} else if dbType == config.PGDBType {
+		fieldType = FieldTypeToPG(f)
 	}
 
 	notNull := ""
@@ -82,10 +84,9 @@ func mapField(f *nemgen.Field, dbType config.DBType) SchemaField {
 	}
 
 	switch f.Type {
-	case nemgen.FieldType_FIELD_TYPE_DATE:
-		ft.Default = "default '2022-02-02'"
+	// TODO add option to disable this in field config
 	case nemgen.FieldType_FIELD_TYPE_DATETIME:
-		ft.Default = "default CURRENT_TIMESTAMP"
+		ft.Default = "DEFAULT CURRENT_TIMESTAMP"
 	}
 	return ft
 }

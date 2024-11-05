@@ -51,6 +51,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 				primaryKeysIdentifiers = append(primaryKeysIdentifiers, pk.Identifier)
 			}
 			entityTemplate := SchemaEntity{
+				DBType:           req.Configvalues.DBType,
 				Name:             e.Identifier,
 				NameTitle:        strcase.ToCamel(e.Identifier),
 				PrimaryKeys:      primaryKeysIdentifiers,
@@ -145,7 +146,7 @@ func generateCreates(ctx context.Context, req *generateRequest) error {
 		createdata, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
 			ExecutionUUID:   req.ExecutionUUID,
 			OutputFile:      "creates.sql",
-			TemplateName:    "creates",
+			TemplateName:    fmt.Sprintf("creates_%s", req.Configvalues.DBType),
 			Data:            req.Data,
 			DisableGoFormat: true,
 		})
@@ -169,7 +170,7 @@ func generateInserts(ctx context.Context, req *generateRequest) error {
 		insertData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
 			ExecutionUUID:   req.ExecutionUUID,
 			OutputFile:      "inserts.sql",
-			TemplateName:    "inserts",
+			TemplateName:    fmt.Sprintf("inserts_%s", req.Configvalues.DBType),
 			Data:            req.Data,
 			DisableGoFormat: true,
 		})
@@ -193,7 +194,7 @@ func generateUpdates(ctx context.Context, req *generateRequest) error {
 		updateData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
 			ExecutionUUID:   req.ExecutionUUID,
 			OutputFile:      "updates.sql",
-			TemplateName:    "updates",
+			TemplateName:    fmt.Sprintf("updates_%s", req.Configvalues.DBType),
 			Data:            req.Data,
 			DisableGoFormat: true,
 		})
@@ -217,7 +218,7 @@ func generateDeletes(ctx context.Context, req *generateRequest) error {
 		deleteData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
 			ExecutionUUID:   req.ExecutionUUID,
 			OutputFile:      "deletes.sql",
-			TemplateName:    "deletes",
+			TemplateName:    fmt.Sprintf("deletes_%s", req.Configvalues.DBType),
 			Data:            req.Data,
 			DisableGoFormat: true,
 		})
@@ -241,7 +242,7 @@ func generateSimpleSelects(ctx context.Context, req *generateRequest) error {
 		selectData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
 			ExecutionUUID:   req.ExecutionUUID,
 			OutputFile:      "selects_simple.sql",
-			TemplateName:    "selects_simple",
+			TemplateName:    fmt.Sprintf("selects_simple_%s", req.Configvalues.DBType),
 			Data:            req.Data,
 			DisableGoFormat: true,
 		})
@@ -265,7 +266,7 @@ func generateIndexedSimpleSelects(ctx context.Context, req *generateRequest) err
 		selectData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
 			ExecutionUUID:   req.ExecutionUUID,
 			OutputFile:      "selects_indexed_simple.sql",
-			TemplateName:    "selects_indexed_simple",
+			TemplateName:    fmt.Sprintf("selects_indexed_simple_%s", req.Configvalues.DBType),
 			Data:            req.Data,
 			DisableGoFormat: true,
 		})
@@ -289,7 +290,7 @@ func generateIndexedCombinedSelects(ctx context.Context, req *generateRequest) e
 		selectData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
 			ExecutionUUID:   req.ExecutionUUID,
 			OutputFile:      "selects_indexed_combined.sql",
-			TemplateName:    "selects_indexed_combined",
+			TemplateName:    fmt.Sprintf("selects_indexed_combined_%s", req.Configvalues.DBType),
 			Data:            req.Data,
 			DisableGoFormat: true,
 		})

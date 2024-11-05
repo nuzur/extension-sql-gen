@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenMysql(t *testing.T) {
+func TestGenPG(t *testing.T) {
 	pvdata, err := os.ReadFile("./testdata/project_version.json")
 	assert.NoError(t, err)
 	projectVerion := &nemgen.ProjectVersion{}
@@ -24,7 +24,7 @@ func TestGenMysql(t *testing.T) {
 		ExecutionUUID: uuid.Must(uuid.NewV4()).String(),
 		DisableUpload: true,
 		Configvalues: &config.Values{
-			DBType: config.MYSQLDBType,
+			DBType: config.PGDBType,
 			Entities: []string{
 				"b8629dd5-f6e5-483f-893a-842357e171fc", "6f9ca9c7-6af3-4301-82d2-739ec84eab83",
 			},
@@ -46,19 +46,19 @@ func TestGenMysql(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
 
-	insertsData, err := os.ReadFile("./testdata/inserts_mysql.sql")
+	insertsData, err := os.ReadFile("./testdata/inserts_pg.sql")
 	assert.NoError(t, err)
-	updatesData, err := os.ReadFile("./testdata/updates_mysql.sql")
+	updatesData, err := os.ReadFile("./testdata/updates_pg.sql")
 	assert.NoError(t, err)
-	deletesData, err := os.ReadFile("./testdata/deletes_mysql.sql")
+	deletesData, err := os.ReadFile("./testdata/deletes_pg.sql")
 	assert.NoError(t, err)
-	createsData, err := os.ReadFile("./testdata/creates_mysql.sql")
+	createsData, err := os.ReadFile("./testdata/creates_pg.sql")
 	assert.NoError(t, err)
-	selectsSimpleData, err := os.ReadFile("./testdata/selects_simple_mysql.sql")
+	selectsSimpleData, err := os.ReadFile("./testdata/selects_simple_pg.sql")
 	assert.NoError(t, err)
-	selectsIndexedSimpleData, err := os.ReadFile("./testdata/selects_indexed_simple_mysql.sql")
+	selectsIndexedSimpleData, err := os.ReadFile("./testdata/selects_indexed_simple_pg.sql")
 	assert.NoError(t, err)
-	selectsIndexedCombinedData, err := os.ReadFile("./testdata/selects_indexed_combined_mysql.sql")
+	selectsIndexedCombinedData, err := os.ReadFile("./testdata/selects_indexed_combined_pg.sql")
 	assert.NoError(t, err)
 
 	for _, db := range res.DisplayBlocks {

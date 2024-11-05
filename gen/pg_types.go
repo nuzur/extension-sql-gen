@@ -79,7 +79,7 @@ func FieldTypeToPG(f *nemgen.Field) string {
 		if f.TypeConfig.Enum.AllowMultiple {
 			return "JSON"
 		}
-		return "INT"
+		return "INTEGER"
 	case nemgen.FieldType_FIELD_TYPE_JSON, // 23
 		nemgen.FieldType_FIELD_TYPE_ARRAY: // 24
 		return "JSON"

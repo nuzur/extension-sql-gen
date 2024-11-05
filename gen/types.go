@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	nemgen "github.com/nuzur/extension-sdk/proto_deps/nem/idl/gen"
+	"github.com/nuzur/extension-sql-gen/config"
 )
 
 type SchemaTemplate struct {
@@ -15,6 +16,7 @@ type SchemaTemplate struct {
 
 // entity
 type SchemaEntity struct {
+	DBType           config.DBType
 	Name             string
 	NameTitle        string
 	PrimaryKeys      []string
@@ -35,7 +37,11 @@ func (e SchemaEntity) PrimaryKeysIdentifiers() string {
 func (e SchemaEntity) PrimaryKeysWhereClause() string {
 	keys := []string{}
 	for _, pk := range e.PrimaryKeys {
-		keys = append(keys, fmt.Sprintf("`%s` = ?", pk))
+		if e.DBType == config.MYSQLDBType {
+			keys = append(keys, fmt.Sprintf("`%s` = ?", pk))
+		} else if e.DBType == config.PGDBType {
+			keys = append(keys, fmt.Sprintf(`"%s" = ?`, pk))
+		}
 	}
 	return strings.Join(keys, " AND ")
 }
@@ -44,7 +50,11 @@ func (e SchemaEntity) UpdateFields() string {
 	fields := []string{}
 	for _, f := range e.Fields {
 		if !slices.Contains(e.PrimaryKeys, f.Name) {
-			fields = append(fields, fmt.Sprintf("`%s` = ?", f.Name))
+			if e.DBType == config.MYSQLDBType {
+				fields = append(fields, fmt.Sprintf("`%s` = ?", f.Name))
+			} else if e.DBType == config.PGDBType {
+				fields = append(fields, fmt.Sprintf(`"%s" = ?`, f.Name))
+			}
 		}
 	}
 	return strings.Join(fields, ", ")
@@ -75,6 +85,7 @@ func (f SchemaField) Postfix() string {
 
 // index
 type SchemaIndex struct {
+	DBType     config.DBType
 	Name       string
 	FieldNames map[string]string
 	Index      *nemgen.Index
@@ -92,13 +103,18 @@ func (i SchemaIndex) FieldNamesIdentifiers() string {
 
 	fieldsStr := []string{}
 	for _, f := range fields {
-		order := ""
-		if f.Order == nemgen.IndexFieldOrder_INDEX_FIELD_ORDER_ASC {
-			order = "ASC"
-		} else if f.Order == nemgen.IndexFieldOrder_INDEX_FIELD_ORDER_DESC {
-			order = "DESC"
+
+		if i.DBType == config.MYSQLDBType {
+			order := ""
+			if f.Order == nemgen.IndexFieldOrder_INDEX_FIELD_ORDER_ASC {
+				order = "ASC"
+			} else if f.Order == nemgen.IndexFieldOrder_INDEX_FIELD_ORDER_DESC {
+				order = "DESC"
+			}
+			fieldsStr = append(fieldsStr, fmt.Sprintf("`%s` %s", i.FieldNames[f.FieldUuid], order))
+		} else if i.DBType == config.PGDBType {
+			fieldsStr = append(fieldsStr, fmt.Sprintf(`"%s"`, i.FieldNames[f.FieldUuid]))
 		}
-		fieldsStr = append(fieldsStr, fmt.Sprintf("`%s` %s", i.FieldNames[f.FieldUuid], order))
 	}
 
 	return fmt.Sprintf("(%s)", strings.Join(fieldsStr, ", "))
@@ -124,6 +140,7 @@ type SchemaSelectStatementField struct {
 
 // contraints
 type SchemaConstraint struct {
+	DBType       config.DBType
 	Name         string
 	Relationship *nemgen.Relationship
 	TableName    string
@@ -137,7 +154,11 @@ func (sc SchemaConstraint) ForeignKeyFields() string {
 	})
 	fields := []string{}
 	for _, f := range sc.Fields {
-		fields = append(fields, fmt.Sprintf("`%s_%s`", sc.TableName, f.Name))
+		if sc.DBType == config.MYSQLDBType {
+			fields = append(fields, fmt.Sprintf("`%s_%s`", sc.TableName, f.Name))
+		} else if sc.DBType == config.PGDBType {
+			fields = append(fields, fmt.Sprintf(`"%s_%s"`, sc.TableName, f.Name))
+		}
 	}
 
 	return strings.Join(fields, ", ")
@@ -149,7 +170,11 @@ func (sc SchemaConstraint) ReferenceFields() string {
 	})
 	fields := []string{}
 	for _, f := range sc.Fields {
-		fields = append(fields, fmt.Sprintf("`%s`", f.Name))
+		if sc.DBType == config.MYSQLDBType {
+			fields = append(fields, fmt.Sprintf("`%s`", f.Name))
+		} else if sc.DBType == config.PGDBType {
+			fields = append(fields, fmt.Sprintf(`"%s"`, f.Name))
+		}
 	}
 
 	return strings.Join(fields, ", ")

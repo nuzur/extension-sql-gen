@@ -31,10 +31,10 @@ func MapEntityToTypes(e *nemgen.Entity, projectVersion *nemgen.ProjectVersion, d
 
 	if e.TypeConfig != nil && e.TypeConfig.Standalone != nil {
 		// map indexes
-		indexes = mapIndexes(e, fieldIdentifers)
+		indexes = mapIndexes(e, dbType, fieldIdentifers)
 
 		// map relationships to constraints
-		constraints = mapRelationships(e, projectVersion)
+		constraints = mapRelationships(e, projectVersion, dbType)
 	}
 
 	if len(indexes) > 0 {
@@ -115,7 +115,7 @@ func mapFieldsToSelectFields(fields []*nemgen.Field, dbType config.DBType) []Sch
 
 }
 
-func mapIndexes(e *nemgen.Entity, fieldIdentifers map[string]string) []SchemaIndex {
+func mapIndexes(e *nemgen.Entity, dbType config.DBType, fieldIdentifers map[string]string) []SchemaIndex {
 	indexes := []SchemaIndex{}
 	for _, i := range e.TypeConfig.Standalone.Indexes {
 		if i.Status == nemgen.IndexStatus_INDEX_STATUS_ACTIVE {
@@ -151,6 +151,7 @@ func mapIndexes(e *nemgen.Entity, fieldIdentifers map[string]string) []SchemaInd
 			}
 
 			indexes = append(indexes, SchemaIndex{
+				DBType:     dbType,
 				Name:       i.Identifier,
 				Index:      i,
 				FieldNames: fieldNames,
@@ -167,7 +168,7 @@ func mapIndexes(e *nemgen.Entity, fieldIdentifers map[string]string) []SchemaInd
 	return indexes
 }
 
-func mapRelationships(e *nemgen.Entity, projectVersion *nemgen.ProjectVersion) []SchemaConstraint {
+func mapRelationships(e *nemgen.Entity, projectVersion *nemgen.ProjectVersion, dbType config.DBType) []SchemaConstraint {
 	res := []SchemaConstraint{}
 
 	entityIdentifiers := make(map[string]string)
@@ -203,6 +204,7 @@ func mapRelationships(e *nemgen.Entity, projectVersion *nemgen.ProjectVersion) [
 							})
 						}
 						res = append(res, SchemaConstraint{
+							DBType:       dbType,
 							Name:         relationship.Identifier,
 							Relationship: relationship,
 							TableName:    entityIdentifiers[toEntity.EntityUuid],

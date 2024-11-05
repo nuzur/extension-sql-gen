@@ -9,7 +9,7 @@ SELECT {{ range $field := $entity.Fields -}}
             "{{$field.Name}}"
             {{- if eq $field.HasComma true}},{{end -}}
         {{- end}}
-FROM {{$entity.Name}}
+FROM "{{$entity.Name}}"
 WHERE 
     {{range $field := $select.Fields -}} 
     "{{- $field.Name}}" = ? {{ if ne $field.IsLast true }}AND {{ end -}}
@@ -25,7 +25,7 @@ SELECT {{ range $field := $entity.Fields -}}
             "{{$field.Name}}"
             {{- if eq $field.HasComma true}},{{end -}}
         {{- end}}
-FROM {{$entity.Name}}
+FROM "{{$entity.Name}}"
 WHERE 
     {{range $field := $select.Fields -}} 
     "{{- $field.Name}}" = ? {{ if ne $field.IsLast true}}AND {{ end -}} 
@@ -42,7 +42,7 @@ SELECT {{ range $field := $entity.Fields -}}
             "{{$field.Name}}"
             {{- if eq $field.HasComma true}},{{end -}}
         {{- end}}
-FROM {{$entity.Name}}
+FROM "{{$entity.Name}}"
 WHERE 
     {{range $field := $select.Fields -}} 
     "{{- $field.Name}}" = ? {{ if ne $field.IsLast true}}AND {{ end -}} 
@@ -55,7 +55,7 @@ SELECT {{ range $field := $entity.Fields -}}
             "{{$field.Name}}"
             {{- if eq $field.HasComma true}},{{end -}}
         {{- end}}
-FROM {{$entity.Name}}
+FROM "{{$entity.Name}}"
 WHERE 
     {{range $field := $select.Fields -}}
     "{{- $field.Name}}" = ? {{ if ne $field.IsLast true }}AND {{ end -}} 

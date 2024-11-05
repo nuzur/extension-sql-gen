@@ -8,9 +8,7 @@ env:
 on:
   push:
     branches:
-      - main
-    paths:
-      - **    
+      - main    
 
 jobs:
     build-and-push-image:

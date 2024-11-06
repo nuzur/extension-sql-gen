@@ -7,6 +7,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/nuzur/extension-sdk/client"
 	pb "github.com/nuzur/extension-sdk/idl/gen"
+	sdkmapper "github.com/nuzur/extension-sdk/mapper"
 	"github.com/nuzur/extension-sql-gen/config"
 	"github.com/nuzur/extension-sql-gen/gen"
 	"google.golang.org/grpc/codes"
@@ -78,8 +79,19 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 func (s *server) SubmitExectuionStep(context.Context, *pb.SubmitExectuionStepRequest) (*pb.SubmitExectuionStepResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitExectuionStep not implemented")
 }
-func (s *server) GetExecution(context.Context, *pb.GetExecutionRequest) (*pb.GetExecutionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetExecutionStatus not implemented")
+
+func (s *server) GetExecution(ctx context.Context, req *pb.GetExecutionRequest) (*pb.GetExecutionResponse, error) {
+	exec, err := s.client.GetExecution(ctx, uuid.FromStringOrNil(req.ExecutionUuid))
+	if err != nil {
+		return nil, err
+	}
+
+	if exec.ExtensionUuid == s.metadata.Uuid {
+		// TODO build step or final data based on the status
+		return sdkmapper.MapExecutionToGetResponse(exec, nil, nil), nil
+	}
+
+	return nil, status.Errorf(codes.InvalidArgument, "execution not found")
 }
 
 func (s *server) getConfigValues(ctx context.Context, req client.ResolveConfigValuesRequest) (*config.Values, error) {

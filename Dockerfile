@@ -32,4 +32,4 @@ ENV PORT=5234
 RUN apk --no-cache add bash curl ca-certificates
 WORKDIR /root/
 COPY --from=builder /go/src .
-ENTRYPOINT ["bash", "-c", "."]
+ENTRYPOINT ["bash", "-c", "extension-sql-gen"]

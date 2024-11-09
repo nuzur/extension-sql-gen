@@ -3,9 +3,9 @@ package config
 type Action string
 
 const (
-	SelectSimpleAction             Action = "select-simple"
-	SelectForIndexedSimpleAction   Action = "select-indexed-simple"
-	SelectForIndexedCombinedAction Action = "select-indexed-combined"
+	SelectSimpleAction             Action = "select_simple"
+	SelectForIndexedSimpleAction   Action = "select_indexed_simple"
+	SelectForIndexedCombinedAction Action = "select_indexed_combined"
 	InsertAction                   Action = "insert"
 	UpdateAction                   Action = "update"
 	DeleteAction                   Action = "delete"

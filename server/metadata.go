@@ -7,5 +7,16 @@ import (
 )
 
 func (s *server) GetMetadata(ctx context.Context, req *pb.GetMetadataRequest) (*pb.GetMetadataResponse, error) {
-	return s.metadata, nil
+	initialMetadata := s.metadata
+
+	switch req.Locale {
+	case "es":
+		initialMetadata.DisplayName = "Generador de SQL"
+		initialMetadata.Description = "Genera el código SQL del proyecto."
+	case "en":
+		initialMetadata.DisplayName = "SQL Generator"
+		initialMetadata.Description = "Generate the SQL code for the project."
+	}
+
+	return initialMetadata, nil
 }

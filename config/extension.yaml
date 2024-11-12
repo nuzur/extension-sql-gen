@@ -1,6 +1,5 @@
 metadata:
   uuid: 9c3c016f-d6b9-4a16-853e-1c84c369d659
   version_uuid: dda2c6ea-a7a4-4512-a063-0ae858b1994b
-  name: sql-gen
-  author: mklfarha
+  identifier: sql-gen
   steps: 1

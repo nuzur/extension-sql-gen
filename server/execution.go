@@ -57,28 +57,27 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 		Deps:          deps,
 	})
 	if err != nil {
-		go func() {
-			s.client.UpdateExecution(context.Background(), client.UpdateExecutionRequest{
-				ExecutionUUID:      uuid.FromStringOrNil(exec.Uuid),
-				ProjectUUID:        projectUUID,
-				ProjectVersionUUID: projectVersionUUID,
-				Status:             pb.ExecutionStatus_EXECUTION_STATUS_FAILED,
-				StatusMsg:          err.Error(),
-			})
-		}()
-		return nil, err
-	}
-
-	// update final status
-	go func() {
 		s.client.UpdateExecution(context.Background(), client.UpdateExecutionRequest{
 			ExecutionUUID:      uuid.FromStringOrNil(exec.Uuid),
 			ProjectUUID:        projectUUID,
 			ProjectVersionUUID: projectVersionUUID,
-			Status:             pb.ExecutionStatus_EXECUTION_STATUS_SUCCEEDED,
-			StatusMsg:          fmt.Sprintf("generated %d blocks and file: %s ", len(res.DisplayBlocks), res.FileDownloadUrl),
+			Status:             pb.ExecutionStatus_EXECUTION_STATUS_FAILED,
+			StatusMsg:          err.Error(),
 		})
-	}()
+		return nil, err
+	}
+
+	// update final status
+	_, err = s.client.UpdateExecution(context.Background(), client.UpdateExecutionRequest{
+		ExecutionUUID:      uuid.FromStringOrNil(exec.Uuid),
+		ProjectUUID:        projectUUID,
+		ProjectVersionUUID: projectVersionUUID,
+		Status:             pb.ExecutionStatus_EXECUTION_STATUS_SUCCEEDED,
+		StatusMsg:          fmt.Sprintf("generated %d blocks and file: %s ", len(res.DisplayBlocks), res.FileDownloadUrl),
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &pb.StartExecutionResponse{
 		ExecutionUuid: exec.Uuid,

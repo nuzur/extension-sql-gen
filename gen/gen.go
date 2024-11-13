@@ -136,6 +136,8 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 					Status:             pb.ExecutionStatus_EXECUTION_STATUS_FAILED,
 					StatusMsg:          err.Error(),
 				})
+				fmt.Printf("error uploading results: %v\n", err)
+				return
 			}
 
 			newMetadata := Metadata{

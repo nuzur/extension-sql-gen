@@ -147,7 +147,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 				ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
 				ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
 				Status:             pb.ExecutionStatus_EXECUTION_STATUS_SUCCEEDED_UPLOADED,
-				StatusMsg:          fmt.Sprintf("generated %d blocks and file: %s ", len(displayBlocks), url),
+				StatusMsg:          fmt.Sprintf("generated %d blocks and file: %s ", len(displayBlocks), *url),
 				Metadata:           newMetadata.ToString(),
 			})
 

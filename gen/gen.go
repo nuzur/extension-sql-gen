@@ -120,7 +120,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 			fileExtension,
 		)
 		go func() {
-			url, err := req.Client.UploadResults(ctx, client.UploadResultsRequest{
+			url, err := req.Client.UploadResults(context.Background(), client.UploadResultsRequest{
 				ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
 				ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
 				ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
@@ -129,7 +129,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 			})
 
 			if err != nil || url == nil {
-				req.Client.UpdateExecution(ctx, client.UpdateExecutionRequest{
+				req.Client.UpdateExecution(context.Background(), client.UpdateExecutionRequest{
 					ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
 					ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
 					ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
@@ -144,7 +144,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 				ConfigValues: configvalues,
 				DownloadURL:  *url,
 			}
-			req.Client.UpdateExecution(ctx, client.UpdateExecutionRequest{
+			req.Client.UpdateExecution(context.Background(), client.UpdateExecutionRequest{
 				ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
 				ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
 				ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),

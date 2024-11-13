@@ -58,7 +58,7 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 	})
 	if err != nil {
 		go func() {
-			s.client.UpdateExecution(ctx, client.UpdateExecutionRequest{
+			s.client.UpdateExecution(context.Background(), client.UpdateExecutionRequest{
 				ExecutionUUID:      uuid.FromStringOrNil(exec.Uuid),
 				ProjectUUID:        projectUUID,
 				ProjectVersionUUID: projectVersionUUID,
@@ -71,7 +71,7 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 
 	// update final status
 	go func() {
-		s.client.UpdateExecution(ctx, client.UpdateExecutionRequest{
+		s.client.UpdateExecution(context.Background(), client.UpdateExecutionRequest{
 			ExecutionUUID:      uuid.FromStringOrNil(exec.Uuid),
 			ProjectUUID:        projectUUID,
 			ProjectVersionUUID: projectVersionUUID,

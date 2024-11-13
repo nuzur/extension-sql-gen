@@ -110,22 +110,52 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 
 	downloadUrl := ""
 	if !req.DisableUpload {
-		url, err := req.Client.UploadResults(ctx, client.UploadResultsRequest{
-			ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
-			ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
-			ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
-			Data:               zipData,
-			FileExtension:      "zip",
-		})
-		if err != nil || url == nil {
-			return nil, err
-		}
-		downloadUrl = *url
-	}
+		fileExtension := "zip"
+		downloadUrl = fmt.Sprintf("project/extension-execution/%s::%s/%s::%s/%s.%s",
+			req.Deps.Project.Uuid,
+			req.Deps.ProjectVersion.Uuid,
+			req.Deps.Extension.Uuid,
+			req.Deps.ExtensionVersion.Uuid,
+			req.ExecutionUUID,
+			fileExtension,
+		)
+		go func() {
+			url, err := req.Client.UploadResults(ctx, client.UploadResultsRequest{
+				ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
+				ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
+				ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
+				Data:               zipData,
+				FileExtension:      "zip",
+			})
 
-	// cleanup
-	os.RemoveAll(path.Join("executions", req.ExecutionUUID))
-	os.RemoveAll(path.Join("executions", fmt.Sprintf("%s.zip", req.ExecutionUUID)))
+			if err != nil {
+				req.Client.UpdateExecution(ctx, client.UpdateExecutionRequest{
+					ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
+					ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
+					ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
+					Status:             pb.ExecutionStatus_EXECUTION_STATUS_FAILED,
+					StatusMsg:          err.Error(),
+				})
+			}
+
+			newMetadata := Metadata{
+				ConfigValues: configvalues,
+				DownloadURL:  url,
+			}
+			req.Client.UpdateExecution(ctx, client.UpdateExecutionRequest{
+				ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
+				ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
+				ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
+				Status:             pb.ExecutionStatus_EXECUTION_STATUS_SUCCEEDED,
+				StatusMsg:          fmt.Sprintf("generated %d blocks and file: %s ", len(displayBlocks), url),
+				Metadata:           newMetadata.ToString(),
+			})
+
+			// cleanup
+			os.RemoveAll(path.Join("executions", req.ExecutionUUID))
+			os.RemoveAll(path.Join("executions", fmt.Sprintf("%s.zip", req.ExecutionUUID)))
+		}()
+	}
 
 	return &GenerateResponse{
 		DisplayBlocks:   displayBlocks,

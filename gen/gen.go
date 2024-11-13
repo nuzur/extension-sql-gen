@@ -120,30 +120,10 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 		})
 
 		if err != nil || url == nil {
-			req.Client.UpdateExecution(ctx, client.UpdateExecutionRequest{
-				ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
-				ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
-				ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
-				Status:             pb.ExecutionStatus_EXECUTION_STATUS_FAILED,
-				StatusMsg:          err.Error(),
-			})
-			fmt.Printf("error uploading results: %v\n", err)
 			return nil, err
 		}
 
 		downloadUrl = *url
-		newMetadata := Metadata{
-			ConfigValues: configvalues,
-			DownloadURL:  downloadUrl,
-		}
-		req.Client.UpdateExecution(ctx, client.UpdateExecutionRequest{
-			ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
-			ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
-			ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
-			Status:             pb.ExecutionStatus_EXECUTION_STATUS_SUCCEEDED_UPLOADED,
-			StatusMsg:          fmt.Sprintf("generated %d blocks and file: %s ", len(displayBlocks), *url),
-			Metadata:           newMetadata.ToString(),
-		})
 	}
 
 	// cleanup

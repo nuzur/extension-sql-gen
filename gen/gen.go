@@ -128,7 +128,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 				FileExtension:      "zip",
 			})
 
-			if err != nil {
+			if err != nil || url == nil {
 				req.Client.UpdateExecution(ctx, client.UpdateExecutionRequest{
 					ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
 					ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
@@ -140,7 +140,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 
 			newMetadata := Metadata{
 				ConfigValues: configvalues,
-				DownloadURL:  url,
+				DownloadURL:  *url,
 			}
 			req.Client.UpdateExecution(ctx, client.UpdateExecutionRequest{
 				ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),

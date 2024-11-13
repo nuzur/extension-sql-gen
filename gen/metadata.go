@@ -8,7 +8,7 @@ import (
 
 type Metadata struct {
 	ConfigValues *config.Values `json:"config_values"`
-	DownloadURL  *string        `json:"download_url"`
+	DownloadURL  string         `json:"download_url"`
 }
 
 func (m Metadata) ToString() string {

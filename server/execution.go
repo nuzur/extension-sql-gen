@@ -57,7 +57,7 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 		Deps:          deps,
 	})
 	if err != nil {
-		s.client.UpdateExecution(context.Background(), client.UpdateExecutionRequest{
+		s.client.UpdateExecution(ctx, client.UpdateExecutionRequest{
 			ExecutionUUID:      uuid.FromStringOrNil(exec.Uuid),
 			ProjectUUID:        projectUUID,
 			ProjectVersionUUID: projectVersionUUID,
@@ -68,7 +68,7 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 	}
 
 	// update final status
-	_, err = s.client.UpdateExecution(context.Background(), client.UpdateExecutionRequest{
+	_, err = s.client.UpdateExecution(ctx, client.UpdateExecutionRequest{
 		ExecutionUUID:      uuid.FromStringOrNil(exec.Uuid),
 		ProjectUUID:        projectUUID,
 		ProjectVersionUUID: projectVersionUUID,

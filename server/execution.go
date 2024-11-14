@@ -4,13 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/nuzur/extension-sdk/client"
 	pb "github.com/nuzur/extension-sdk/idl/gen"
 	sdkmapper "github.com/nuzur/extension-sdk/mapper"
+	nemgen "github.com/nuzur/extension-sdk/proto_deps/nem/idl/gen"
 	"github.com/nuzur/extension-sql-gen/config"
 	"github.com/nuzur/extension-sql-gen/gen"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -20,6 +23,8 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 	projectVersionUUID := uuid.FromStringOrNil(req.ProjectVersionUuid)
 	projectExtensionUUID := uuid.FromStringOrNil(req.ProjectExtensionUuid)
 
+	start := time.Now()
+	fmt.Printf("start exec! \n")
 	configvalues, err := s.getConfigValues(ctx, client.ResolveConfigValuesRequest{
 		ProjectUUID:          projectUUID,
 		ProjectExtensionUUID: projectExtensionUUID,
@@ -29,26 +34,49 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 		return nil, err
 	}
 
-	deps, err := s.client.GetBaseDependencies(ctx, client.BaseDependenciesRequest{
-		ProjectUUID:        projectUUID,
-		ProjectVersionUUID: projectVersionUUID,
+	fmt.Printf("config values: %v \n", time.Since(start))
+	start = time.Now()
+
+	eg, _ := errgroup.WithContext(ctx)
+
+	var deps *client.BaseDependenciesResponse
+	eg.Go(func() error {
+		depsStart := time.Now()
+		deps, err = s.client.GetBaseDependencies(ctx, client.BaseDependenciesRequest{
+			ProjectUUID:        projectUUID,
+			ProjectVersionUUID: projectVersionUUID,
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("deps: %v \n", time.Since(depsStart))
+		return nil
 	})
+
+	var exec *nemgen.ExtensionExecution
+	eg.Go(func() error {
+		metadata := gen.Metadata{
+			ConfigValues: configvalues,
+		}
+		exec, err = s.client.CreateExecution(ctx, client.CreateExecutionRequest{
+			ProjectUUID:          projectUUID,
+			ProjectVersionUUID:   projectVersionUUID,
+			ProjectExtensionUUID: projectExtensionUUID,
+			Metadata:             metadata.ToString(),
+		})
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	err = eg.Wait()
 	if err != nil {
 		return nil, err
 	}
 
-	metadata := gen.Metadata{
-		ConfigValues: configvalues,
-	}
-	exec, err := s.client.CreateExecution(ctx, client.CreateExecutionRequest{
-		ProjectUUID:          projectUUID,
-		ProjectVersionUUID:   projectVersionUUID,
-		ProjectExtensionUUID: projectExtensionUUID,
-		Metadata:             metadata.ToString(),
-	})
-	if err != nil {
-		return nil, err
-	}
+	fmt.Printf("deps + create exec: %v \n", time.Since(start))
+	start = time.Now()
 
 	res, err := gen.Generate(ctx, gen.GenerateRequest{
 		ExecutionUUID: exec.Uuid,
@@ -66,6 +94,8 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 		})
 		return nil, err
 	}
+	fmt.Printf("gen: %v \n", time.Since(start))
+	start = time.Now()
 
 	// update final status
 	_, err = s.client.UpdateExecution(ctx, client.UpdateExecutionRequest{
@@ -78,6 +108,8 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("final update: %v \n", time.Since(start))
 
 	return &pb.StartExecutionResponse{
 		ExecutionUuid: exec.Uuid,

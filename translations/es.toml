@@ -1,0 +1,7 @@
+[DisplayName]
+description = "Name of the extension displayed to the user"
+other = "Generador de SQL"
+
+[Description]
+description = "Description of the extension displayed to the user"
+other = "Genera el código SQL del proyecto."

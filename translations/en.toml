@@ -1,0 +1,7 @@
+[DisplayName]
+description = "Name of the extension displayed to the user"
+other = "SQL Generator"
+
+[Description]
+description = "Description of the extension displayed to the user"
+other = "Generate the SQL code for the project."

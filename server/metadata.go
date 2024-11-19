@@ -9,14 +9,8 @@ import (
 func (s *server) GetMetadata(ctx context.Context, req *pb.GetMetadataRequest) (*pb.GetMetadataResponse, error) {
 	initialMetadata := s.metadata
 
-	switch req.Locale {
-	case "es":
-		initialMetadata.DisplayName = "Generador de SQL"
-		initialMetadata.Description = "Genera el código SQL del proyecto."
-	case "en":
-		initialMetadata.DisplayName = "SQL Generator"
-		initialMetadata.Description = "Generate the SQL code for the project."
-	}
+	initialMetadata.DisplayName = s.client.Localize("DisplayName", req.Locale, "SQL Generator")
+	initialMetadata.Description = s.client.Localize("Description", req.Locale, "Generate SQL code for the project.")
 
 	return initialMetadata, nil
 }

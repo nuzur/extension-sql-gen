@@ -2,20 +2,16 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/nuzur/extension-sdk/client"
 	pb "github.com/nuzur/extension-sdk/idl/gen"
-	sdkmapper "github.com/nuzur/extension-sdk/mapper"
 	nemgen "github.com/nuzur/extension-sdk/proto_deps/nem/idl/gen"
 	"github.com/nuzur/extension-sql-gen/config"
 	"github.com/nuzur/extension-sql-gen/gen"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionRequest) (*pb.StartExecutionResponse, error) {
@@ -25,11 +21,12 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 
 	start := time.Now()
 	fmt.Printf("start exec! \n")
-	configvalues, err := s.getConfigValues(ctx, client.ResolveConfigValuesRequest{
+	configvalues := &config.Values{}
+	err := s.client.ResolveConfigValues(ctx, client.ResolveConfigValuesRequest{
 		ProjectUUID:          projectUUID,
 		ProjectExtensionUUID: projectExtensionUUID,
 		RawConfigValues:      req.ConfigValues,
-	})
+	}, configvalues)
 	if err != nil {
 		return nil, err
 	}
@@ -122,37 +119,4 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 			},
 		},
 	}, nil
-}
-
-func (s *server) SubmitExectuionStep(context.Context, *pb.SubmitExectuionStepRequest) (*pb.SubmitExectuionStepResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SubmitExectuionStep not implemented")
-}
-
-func (s *server) GetExecution(ctx context.Context, req *pb.GetExecutionRequest) (*pb.GetExecutionResponse, error) {
-	exec, err := s.client.GetExecution(ctx, uuid.FromStringOrNil(req.ExecutionUuid))
-	if err != nil {
-		return nil, err
-	}
-
-	if exec.ExtensionUuid == s.metadata.Uuid {
-		// TODO build step or final data based on the status
-		return sdkmapper.MapExecutionToGetResponse(exec, nil, nil), nil
-	}
-
-	return nil, status.Errorf(codes.InvalidArgument, "execution not found")
-}
-
-func (s *server) getConfigValues(ctx context.Context, req client.ResolveConfigValuesRequest) (*config.Values, error) {
-	configValues, err := s.client.ResolveConfigValues(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	values := config.Values{}
-	err = json.Unmarshal([]byte(*configValues), &values)
-	if err != nil {
-		return nil, err
-	}
-
-	return &values, nil
 }

@@ -108,6 +108,11 @@ func (s *server) StartExecution(ctx context.Context, req *pb.StartExecutionReque
 
 	fmt.Printf("final update: %v \n", time.Since(start))
 
+	for _, db := range res.DisplayBlocks {
+		db.Title = s.client.Localize(fmt.Sprintf("%s_title", db.Identifier), req.Locale, db.Identifier)
+		db.Description = s.client.Localize(fmt.Sprintf("%s_description", db.Identifier), req.Locale, db.Identifier)
+	}
+
 	return &pb.StartExecutionResponse{
 		ExecutionUuid: exec.Uuid,
 		Type:          pb.ExecutionResponseType_EXECUTION_RESPONSE_TYPE_FINAL,

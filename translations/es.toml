@@ -1,7 +1,47 @@
 [DisplayName]
-description = "Name of the extension displayed to the user"
 other = "Generador de SQL"
 
 [Description]
-description = "Description of the extension displayed to the user"
 other = "Genera el código SQL del proyecto."
+
+[create_title]
+other = "Create SQL"
+
+[create_description]
+other = "SQL para crear las tablas"
+
+[delete_title]
+other = "Delete SQL"
+
+[delete_description]
+other = "SQL para eliminar registros en las tablas"
+
+[insert_title]
+other = "Insert SQL"
+
+[insert_description]
+other = "SQL para insertar registros en las tablas"
+
+[update_title]
+other = "Update SQL"
+
+[update_description]
+other = "SQL para actualizar registros en las tablas"
+
+[select_simple_title]
+other = "Select SQL Simple"
+
+[select_simple_description]
+other = "SQL simple para obtener registros de las tablas"
+
+[select_indexed_simple_title]
+other = "Select SQL de columnas indexadas"
+
+[select_indexed_simple_description]
+other = "SQL para obtener registros de las tablas utilizando las columnas indexadas de las misma"
+
+[select_indexed_combined_title]
+other = "Select SQL de columnas indexadas (combinado)"
+
+[select_indexed_combined_description]
+other = "SQL para obtener registros de las tablas utilizando las columnas indexadas de las misma y sus combinaciones"

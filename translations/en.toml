@@ -1,7 +1,47 @@
 [DisplayName]
-description = "Name of the extension displayed to the user"
 other = "SQL Generator"
 
 [Description]
-description = "Description of the extension displayed to the user"
 other = "Generate the SQL code for the project."
+
+[create_title]
+other = "Create SQL"
+
+[create_description]
+other = "SQL to create the tables"
+
+[delete_title]
+other = "Delete SQL"
+
+[delete_description]
+other = "SQL to delete recrods from the tables"
+
+[insert_title]
+other = "Insert SQL"
+
+[insert_description]
+other = "SQL to insert recrods in the tables"
+
+[update_title]
+other = "Update SQL"
+
+[update_description]
+other = "SQL to update recrods in the tables"
+
+[select_simple_title]
+other = "Simple Select SQL"
+
+[select_simple_description]
+other = "Simple SQL select queries from tables"
+
+[select_indexed_simple_title]
+other = "Indexed Select SQL"
+
+[select_indexed_simple_description]
+other = "Simple select statements as well as select statements using indexed columns in the table"
+
+[select_indexed_combined_title]
+other = "Combined Indexed Select SQL"
+
+[select_indexed_combined_description]
+other = "Simple select statements as well as select statements using indexed columns in the table and their combinations"

@@ -13,9 +13,10 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/nuzur/extension-sdk/client"
 	"github.com/nuzur/extension-sdk/domainhelpers"
-	sdkgen "github.com/nuzur/extension-sdk/gen"
+	filetools "github.com/nuzur/extension-sdk/filetools"
 	pb "github.com/nuzur/extension-sdk/idl/gen"
 	"github.com/nuzur/extension-sql-gen/config"
+	"github.com/nuzur/extension-sql-gen/constants"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -75,20 +76,11 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 		DisplayBlocks: &displayBlocks,
 	}
 
-	genFuncs := []func(context.Context, *generateRequest) error{
-		generateCreates,
-		generateInserts,
-		generateUpdates,
-		generateDeletes,
-		generateSimpleSelects,
-		generateIndexedSimpleSelects,
-		generateIndexedCombinedSelects,
-	}
-
 	eg, _ := errgroup.WithContext(ctx)
-	for _, genFunc := range genFuncs {
+	for _, action := range configvalues.Actions {
 		eg.Go(func() error {
-			return genFunc(ctx, genReq)
+			genReq.Action = action
+			return generate(ctx, genReq)
 		})
 	}
 	err := eg.Wait()
@@ -96,7 +88,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 		return nil, err
 	}
 
-	err = sdkgen.GenerateZip(ctx, sdkgen.ZipRequest{
+	err = filetools.GenerateZip(ctx, filetools.ZipRequest{
 		ExecutionUUID: req.ExecutionUUID,
 	})
 	if err != nil {
@@ -110,13 +102,12 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 
 	downloadUrl := ""
 	if !req.DisableUpload {
-		fileExtension := "zip"
-		url, err := req.Client.UploadResults(ctx, client.UploadResultsRequest{
+		url, err := req.Client.UploadExecutionResults(ctx, client.UploadResultsRequest{
 			ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
 			ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),
 			ProjectVersionUUID: uuid.FromStringOrNil(req.Deps.ProjectVersion.Uuid),
 			Data:               zipData,
-			FileExtension:      fileExtension,
+			FileExtension:      constants.ResultsFileExtension,
 		})
 
 		if err != nil || url == nil {
@@ -127,8 +118,8 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 	}
 
 	// cleanup
-	os.RemoveAll(path.Join("executions", req.ExecutionUUID))
-	os.RemoveAll(path.Join("executions", fmt.Sprintf("%s.zip", req.ExecutionUUID)))
+	os.RemoveAll(path.Join(filetools.CurrentPath(), "executions", req.ExecutionUUID))
+	os.RemoveAll(path.Join(filetools.CurrentPath(), "executions", fmt.Sprintf("%s.zip", req.ExecutionUUID)))
 
 	return &GenerateResponse{
 		DisplayBlocks:   displayBlocks,
@@ -142,172 +133,27 @@ type generateRequest struct {
 	Configvalues  *config.Values
 	Data          SchemaTemplate
 	DisplayBlocks *[]*pb.ExecutionResponseDisplayBlock
+	Action        config.Action
 }
 
-func generateCreates(ctx context.Context, req *generateRequest) error {
-	if slices.Contains(req.Configvalues.Actions, config.CreateAction) {
-		createdata, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
-			ExecutionUUID:   req.ExecutionUUID,
-			OutputFile:      "creates.sql",
-			TemplateName:    fmt.Sprintf("creates_%s", req.Configvalues.DBType),
-			Data:            req.Data,
-			DisableGoFormat: true,
-		})
-		if err != nil {
-			return err
-		}
-		req.mu.Lock()
-		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
-			Identifier:  string(config.CreateAction),
-			Title:       "Create SQL",
-			Description: "",
-			Content:     string(createdata),
-		})
-		req.mu.Unlock()
+func generate(ctx context.Context, req *generateRequest) error {
+	data, err := filetools.GenerateFile(ctx, filetools.FileRequest{
+		ExecutionUUID:   req.ExecutionUUID,
+		OutputFile:      fmt.Sprintf("%s.sql", string(req.Action)),
+		TemplateName:    fmt.Sprintf("%s_%s", string(req.Action), req.Configvalues.DBType),
+		Data:            req.Data,
+		DisableGoFormat: true,
+	})
+	if err != nil {
+		return err
 	}
-	return nil
-}
+	req.mu.Lock()
+	*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
+		Identifier:  string(req.Action),
+		Content:     string(data),
+		ContentType: pb.DisplayBlockContentType_DISPLAY_BLOCK_CONTENT_TYPE_SQL,
+	})
+	req.mu.Unlock()
 
-func generateInserts(ctx context.Context, req *generateRequest) error {
-	if slices.Contains(req.Configvalues.Actions, config.InsertAction) {
-		insertData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
-			ExecutionUUID:   req.ExecutionUUID,
-			OutputFile:      "inserts.sql",
-			TemplateName:    fmt.Sprintf("inserts_%s", req.Configvalues.DBType),
-			Data:            req.Data,
-			DisableGoFormat: true,
-		})
-		if err != nil {
-			return err
-		}
-		req.mu.Lock()
-		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
-			Identifier:  string(config.InsertAction),
-			Title:       "Insert SQL",
-			Description: "",
-			Content:     string(insertData),
-		})
-		req.mu.Unlock()
-	}
-	return nil
-}
-
-func generateUpdates(ctx context.Context, req *generateRequest) error {
-	if slices.Contains(req.Configvalues.Actions, config.UpdateAction) {
-		updateData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
-			ExecutionUUID:   req.ExecutionUUID,
-			OutputFile:      "updates.sql",
-			TemplateName:    fmt.Sprintf("updates_%s", req.Configvalues.DBType),
-			Data:            req.Data,
-			DisableGoFormat: true,
-		})
-		if err != nil {
-			return err
-		}
-		req.mu.Lock()
-		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
-			Identifier:  string(config.UpdateAction),
-			Title:       "Update SQL",
-			Description: "",
-			Content:     string(updateData),
-		})
-		req.mu.Unlock()
-	}
-	return nil
-}
-
-func generateDeletes(ctx context.Context, req *generateRequest) error {
-	if slices.Contains(req.Configvalues.Actions, config.DeleteAction) {
-		deleteData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
-			ExecutionUUID:   req.ExecutionUUID,
-			OutputFile:      "deletes.sql",
-			TemplateName:    fmt.Sprintf("deletes_%s", req.Configvalues.DBType),
-			Data:            req.Data,
-			DisableGoFormat: true,
-		})
-		if err != nil {
-			return err
-		}
-		req.mu.Lock()
-		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
-			Identifier:  string(config.DeleteAction),
-			Title:       "Delete SQL",
-			Description: "",
-			Content:     string(deleteData),
-		})
-		req.mu.Unlock()
-	}
-	return nil
-}
-
-func generateSimpleSelects(ctx context.Context, req *generateRequest) error {
-	if slices.Contains(req.Configvalues.Actions, config.SelectSimpleAction) {
-		selectData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
-			ExecutionUUID:   req.ExecutionUUID,
-			OutputFile:      "selects_simple.sql",
-			TemplateName:    fmt.Sprintf("selects_simple_%s", req.Configvalues.DBType),
-			Data:            req.Data,
-			DisableGoFormat: true,
-		})
-		if err != nil {
-			return err
-		}
-		req.mu.Lock()
-		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
-			Identifier:  string(config.SelectSimpleAction),
-			Title:       "Select Simple SQL",
-			Description: "",
-			Content:     string(selectData),
-		})
-		req.mu.Unlock()
-	}
-	return nil
-}
-
-func generateIndexedSimpleSelects(ctx context.Context, req *generateRequest) error {
-	if slices.Contains(req.Configvalues.Actions, config.SelectForIndexedSimpleAction) {
-		selectData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
-			ExecutionUUID:   req.ExecutionUUID,
-			OutputFile:      "selects_indexed_simple.sql",
-			TemplateName:    fmt.Sprintf("selects_indexed_simple_%s", req.Configvalues.DBType),
-			Data:            req.Data,
-			DisableGoFormat: true,
-		})
-		if err != nil {
-			return err
-		}
-		req.mu.Lock()
-		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
-			Identifier:  string(config.SelectForIndexedSimpleAction),
-			Title:       "Select Indexed Simple SQL",
-			Description: "",
-			Content:     string(selectData),
-		})
-		req.mu.Unlock()
-	}
-	return nil
-}
-
-func generateIndexedCombinedSelects(ctx context.Context, req *generateRequest) error {
-	if slices.Contains(req.Configvalues.Actions, config.SelectForIndexedCombinedAction) {
-		selectData, err := sdkgen.GenerateFile(ctx, sdkgen.FileRequest{
-			ExecutionUUID:   req.ExecutionUUID,
-			OutputFile:      "selects_indexed_combined.sql",
-			TemplateName:    fmt.Sprintf("selects_indexed_combined_%s", req.Configvalues.DBType),
-			Data:            req.Data,
-			DisableGoFormat: true,
-		})
-		if err != nil {
-			return err
-		}
-		req.mu.Lock()
-		*req.DisplayBlocks = append(*req.DisplayBlocks, &pb.ExecutionResponseDisplayBlock{
-			Identifier:  string(config.SelectForIndexedCombinedAction),
-			Title:       "Select Indexed Combined SQL",
-			Description: "",
-			Content:     string(selectData),
-		})
-		req.mu.Unlock()
-	}
 	return nil
 }

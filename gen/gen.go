@@ -69,18 +69,16 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 	}
 	displayBlocks := []*pb.ExecutionResponseDisplayBlock{}
 
-	genReq := &generateRequest{
-		ExecutionUUID: req.ExecutionUUID,
-		Configvalues:  configvalues,
-		Data:          tpl,
-		DisplayBlocks: &displayBlocks,
-	}
-
 	eg, _ := errgroup.WithContext(ctx)
 	for _, action := range configvalues.Actions {
 		eg.Go(func() error {
-			genReq.Action = action
-			return generate(ctx, genReq)
+			return generate(ctx, &generateRequest{
+				ExecutionUUID: req.ExecutionUUID,
+				Configvalues:  configvalues,
+				Data:          tpl,
+				DisplayBlocks: &displayBlocks,
+				Action:        action,
+			})
 		})
 	}
 	err := eg.Wait()

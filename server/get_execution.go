@@ -12,11 +12,11 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/nuzur/extension-sdk/client"
-	"github.com/nuzur/extension-sdk/filetools"
 	pb "github.com/nuzur/extension-sdk/idl/gen"
 	sdkmapper "github.com/nuzur/extension-sdk/mapper"
 	"github.com/nuzur/extension-sdk/proto_deps/nem/idl/gen"
 	"github.com/nuzur/extension-sql-gen/constants"
+	"github.com/nuzur/filetools"
 )
 
 func (s *server) GetExecution(ctx context.Context, req *pb.GetExecutionRequest) (*pb.GetExecutionResponse, error) {

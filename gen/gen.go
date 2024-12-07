@@ -13,10 +13,10 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/nuzur/extension-sdk/client"
 	"github.com/nuzur/extension-sdk/domainhelpers"
-	filetools "github.com/nuzur/extension-sdk/filetools"
 	pb "github.com/nuzur/extension-sdk/idl/gen"
 	"github.com/nuzur/extension-sql-gen/config"
 	"github.com/nuzur/extension-sql-gen/constants"
+	"github.com/nuzur/filetools"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -87,7 +87,8 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 	}
 
 	err = filetools.GenerateZip(ctx, filetools.ZipRequest{
-		ExecutionUUID: req.ExecutionUUID,
+		OutputPath: "executions",
+		Identifier: req.ExecutionUUID,
 	})
 	if err != nil {
 		return nil, err
@@ -136,8 +137,7 @@ type generateRequest struct {
 
 func generate(ctx context.Context, req *generateRequest) error {
 	data, err := filetools.GenerateFile(ctx, filetools.FileRequest{
-		ExecutionUUID:   req.ExecutionUUID,
-		OutputFile:      fmt.Sprintf("%s.sql", string(req.Action)),
+		OutputPath:      path.Join("executions", req.ExecutionUUID, fmt.Sprintf("%s.sql", string(req.Action))),
 		TemplateName:    fmt.Sprintf("%s_%s", string(req.Action), req.Configvalues.DBType),
 		Data:            req.Data,
 		DisableGoFormat: true,

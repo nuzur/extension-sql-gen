@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"slices"
 	"sync"
 
@@ -117,8 +118,8 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 	}
 
 	// cleanup
-	os.RemoveAll(path.Join(filetools.CurrentPath(), "executions", req.ExecutionUUID))
-	os.RemoveAll(path.Join(filetools.CurrentPath(), "executions", fmt.Sprintf("%s.zip", req.ExecutionUUID)))
+	os.RemoveAll(path.Join(filetools.CurrentLocalPath(), "executions", req.ExecutionUUID))
+	os.RemoveAll(path.Join(filetools.CurrentLocalPath(), "executions", fmt.Sprintf("%s.zip", req.ExecutionUUID)))
 
 	return &GenerateResponse{
 		DisplayBlocks:   displayBlocks,
@@ -138,7 +139,7 @@ type generateRequest struct {
 func generate(ctx context.Context, req *generateRequest) error {
 	data, err := filetools.GenerateFile(ctx, filetools.FileRequest{
 		OutputPath:      path.Join("executions", req.ExecutionUUID, fmt.Sprintf("%s.sql", string(req.Action))),
-		TemplateName:    fmt.Sprintf("%s_%s", string(req.Action), req.Configvalues.DBType),
+		TemplatePath:    filepath.Join(filetools.CurrentLocalPath(), "templates", fmt.Sprintf("%s_%s.tmpl", string(req.Action), req.Configvalues.DBType)),
 		Data:            req.Data,
 		DisableGoFormat: true,
 	})

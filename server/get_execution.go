@@ -84,7 +84,7 @@ func (s *server) GetExecution(ctx context.Context, req *pb.GetExecutionRequest) 
 	}
 
 	// cleanup
-	os.RemoveAll(path.Join(filetools.CurrentPath(), "previous-executions", fmt.Sprintf("%s.%s", req.ExecutionUuid, constants.ResultsFileExtension)))
+	os.RemoveAll(path.Join(filetools.CurrentLocalPath(), "previous-executions", fmt.Sprintf("%s.%s", req.ExecutionUuid, constants.ResultsFileExtension)))
 
 	return sdkmapper.MapExecutionToGetResponse(exec, nil, finalData), nil
 }

@@ -104,7 +104,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 	}
 
 	downloadUrl := ""
-	if !req.DisableUpload {
+	if !req.DisableUpload && req.Client != nil {
 		url, err := req.Client.UploadExecutionResults(ctx, client.UploadResultsRequest{
 			ExecutionUUID:      uuid.FromStringOrNil(req.ExecutionUUID),
 			ProjectUUID:        uuid.FromStringOrNil(req.Deps.Project.Uuid),

@@ -2,11 +2,11 @@ package gen
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"slices"
 	"sync"
 
@@ -20,6 +20,9 @@ import (
 	"github.com/nuzur/filetools"
 	"golang.org/x/sync/errgroup"
 )
+
+//go:embed templates/**
+var templates embed.FS
 
 type GenerateRequest struct {
 	ExecutionUUID string
@@ -73,7 +76,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 	eg, _ := errgroup.WithContext(ctx)
 	for _, action := range configvalues.Actions {
 		eg.Go(func() error {
-			return generate(ctx, &generateRequest{
+			return GenerateFile(ctx, &GenerateFileRequest{
 				ExecutionUUID: req.ExecutionUUID,
 				Configvalues:  configvalues,
 				Data:          tpl,
@@ -127,7 +130,7 @@ func Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, erro
 	}, nil
 }
 
-type generateRequest struct {
+type GenerateFileRequest struct {
 	mu            sync.Mutex
 	ExecutionUUID string
 	Configvalues  *config.Values
@@ -136,10 +139,15 @@ type generateRequest struct {
 	Action        config.Action
 }
 
-func generate(ctx context.Context, req *generateRequest) error {
+func GenerateFile(ctx context.Context, req *GenerateFileRequest) error {
+	fileName := fmt.Sprintf("%s_%s", string(req.Action), req.Configvalues.DBType)
+	tmplBytes, err := templates.ReadFile(fmt.Sprintf("templates/%s.tmpl", fileName))
+	if err != nil {
+		return err
+	}
 	data, err := filetools.GenerateFile(ctx, filetools.FileRequest{
 		OutputPath:      path.Join("executions", req.ExecutionUUID, fmt.Sprintf("%s.sql", string(req.Action))),
-		TemplatePath:    filepath.Join(filetools.CurrentLocalPath(), "templates", fmt.Sprintf("%s_%s.tmpl", string(req.Action), req.Configvalues.DBType)),
+		TemplateBytes:   tmplBytes,
 		Data:            req.Data,
 		DisableGoFormat: true,
 	})
